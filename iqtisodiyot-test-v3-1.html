@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iqtisodiyot Nazariyasi — Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700;900&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0e1a;--surface:#111827;--accent:#00e5ff;--accent2:#7c3aed;--correct:#10b981;--wrong:#ef4444;--text:#e2e8f0;--muted:#64748b;--border:#1e293b;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Manrope',sans-serif;min-height:100vh;background-image:radial-gradient(ellipse at 20% 20%,rgba(0,229,255,.05) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(124,58,237,.05) 0%,transparent 50%);}
+  .screen{display:none;min-height:100vh;}
+  .screen.active{display:flex;flex-direction:column;}
+  #homeScreen{align-items:center;justify-content:center;padding:2rem;text-align:center;}
+  .logo{font-family:'Unbounded',sans-serif;font-size:clamp(1.6rem,5vw,2.8rem);font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-bottom:.4rem;}
+  .sub{color:var(--muted);font-size:.9rem;margin-bottom:2.5rem;}
+  .variants-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;width:100%;max-width:420px;margin-bottom:1.5rem;}
+  .v-card{background:var(--surface);border:2px solid var(--border);border-radius:1.2rem;padding:1.4rem 1rem;cursor:pointer;transition:all .2s;text-align:center;}
+  .v-card:hover{border-color:var(--accent);background:rgba(0,229,255,.06);}
+  .v-card.selected{border-color:var(--accent);background:rgba(0,229,255,.1);}
+  .v-letter{font-family:'Unbounded',sans-serif;font-size:2rem;font-weight:900;color:var(--accent);}
+  .v-info{font-size:.78rem;color:var(--muted);margin-top:.3rem;}
+  .random-row{display:flex;gap:.75rem;justify-content:center;margin-bottom:2rem;flex-wrap:wrap;}
+  .mode-btn{background:var(--surface);border:2px solid var(--border);color:var(--muted);padding:.6rem 1.2rem;border-radius:2rem;cursor:pointer;font-family:'Manrope',sans-serif;font-size:.85rem;transition:all .2s;}
+  .mode-btn.active{border-color:var(--accent2);color:#a78bfa;background:rgba(124,58,237,.1);}
+  .start-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0a0e1a;border:none;padding:1rem 2.8rem;border-radius:2rem;font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 0 30px rgba(0,229,255,.2);}
+  .start-btn:hover{transform:scale(1.05);}
+  .start-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+  #quizScreen{padding:0;}
+  .quiz-header{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.5rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:10;}
+  .q-counter{font-family:'Unbounded',sans-serif;font-size:.8rem;color:var(--accent);white-space:nowrap;}
+  .prog-wrap{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width .4s;}
+  .score-live{font-family:'Unbounded',sans-serif;font-size:.8rem;color:var(--correct);white-space:nowrap;}
+  .quiz-body{flex:1;padding:2rem 1.5rem;max-width:700px;margin:0 auto;width:100%;}
+  .variant-tag{display:inline-flex;gap:.4rem;align-items:center;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.3);color:#a78bfa;font-size:.75rem;padding:.25rem .75rem;border-radius:1rem;margin-bottom:1rem;}
+  .q-text{font-size:1.05rem;font-weight:600;line-height:1.6;margin-bottom:1.8rem;color:#f1f5f9;}
+  .opts{display:flex;flex-direction:column;gap:.7rem;}
+  .opt-btn{background:var(--surface);border:2px solid var(--border);color:var(--text);padding:.9rem 1.1rem;border-radius:.85rem;text-align:left;cursor:pointer;font-family:'Manrope',sans-serif;font-size:.93rem;line-height:1.5;transition:all .2s;display:flex;align-items:flex-start;gap:.7rem;}
+  .opt-btn:hover:not(:disabled){border-color:var(--accent);background:rgba(0,229,255,.05);}
+  .opt-ltr{background:var(--border);color:var(--muted);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Unbounded',sans-serif;font-size:.7rem;font-weight:700;flex-shrink:0;transition:all .2s;}
+  .opt-btn.correct{border-color:var(--correct);background:rgba(16,185,129,.08);}
+  .opt-btn.correct .opt-ltr{background:var(--correct);color:#fff;}
+  .opt-btn.wrong{border-color:var(--wrong);background:rgba(239,68,68,.08);}
+  .opt-btn.wrong .opt-ltr{background:var(--wrong);color:#fff;}
+  .opt-btn:disabled{cursor:default;}
+  .feedback{margin-top:1.2rem;padding:.9rem 1.1rem;border-radius:.85rem;font-size:.88rem;line-height:1.6;display:none;}
+  .feedback.correct{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;display:block;}
+  .feedback.wrong{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;display:block;}
+  .next-btn{margin-top:1.4rem;width:100%;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;border:none;padding:.95rem;border-radius:.85rem;font-family:'Unbounded',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;display:none;transition:opacity .2s;}
+  .next-btn:hover{opacity:.85;}
+  #resultScreen{align-items:center;justify-content:center;padding:2rem;text-align:center;}
+  .res-emoji{font-size:3.5rem;margin-bottom:.8rem;}
+  .res-title{font-family:'Unbounded',sans-serif;font-size:clamp(1.3rem,4vw,1.8rem);font-weight:900;margin-bottom:.4rem;}
+  .res-big{font-family:'Unbounded',sans-serif;font-size:clamp(3rem,10vw,5rem);font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;margin:.8rem 0;}
+  .res-desc{color:var(--muted);margin-bottom:1.8rem;font-size:.9rem;}
+  .res-cards{display:flex;gap:1rem;justify-content:center;margin-bottom:2rem;flex-wrap:wrap;}
+  .res-card{background:var(--surface);border:1px solid var(--border);border-radius:1rem;padding:.9rem 1.3rem;min-width:100px;}
+  .res-card .num{font-family:'Unbounded',sans-serif;font-size:1.4rem;font-weight:700;}
+  .res-card.c .num{color:var(--correct);}
+  .res-card.w .num{color:var(--wrong);}
+  .res-card.p .num{color:var(--accent);}
+  .res-card .lbl{font-size:.75rem;color:var(--muted);margin-top:.2rem;}
+  .res-btns{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;}
+  .restart-btn{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0a0e1a;border:none;padding:.9rem 2rem;border-radius:2rem;font-family:'Unbounded',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:transform .2s;}
+  .restart-btn:hover{transform:scale(1.05);}
+  .home-btn{background:var(--surface);border:2px solid var(--border);color:var(--text);padding:.9rem 2rem;border-radius:2rem;font-family:'Unbounded',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s;}
+  .home-btn:hover{border-color:var(--accent);color:var(--accent);}
+  @media(max-width:480px){.quiz-body{padding:1.2rem 1rem;}.q-text{font-size:.98rem;}}
+</style>
+</head>
+<body>
+
+<div id="homeScreen" class="screen active">
+  <div class="logo">IQTISODIYOT<br>NAZARIYASI</div>
+  <div class="sub">Yakuniy imtihon — variantli test</div>
+  <div class="variants-grid">
+    <div class="v-card" onclick="selectVariant(this,'A')"><div class="v-letter">A</div><div class="v-info" id="infoA">— savol</div></div>
+    <div class="v-card" onclick="selectVariant(this,'B')"><div class="v-letter">B</div><div class="v-info" id="infoB">— savol</div></div>
+    <div class="v-card" onclick="selectVariant(this,'C')"><div class="v-letter">C</div><div class="v-info" id="infoC">— savol</div></div>
+    <div class="v-card" onclick="selectVariant(this,'D')"><div class="v-letter">D</div><div class="v-info" id="infoD">— savol</div></div>
+  </div>
+  <div class="random-row">
+    <button class="mode-btn" id="modeRandom" onclick="setMode('random')">🔀 Random tartib</button>
+    <button class="mode-btn active" id="modeFixed" onclick="setMode('fixed')">📋 Tartibli</button>
+  </div>
+  <button class="start-btn" id="startBtn" onclick="startQuiz()" disabled>Variant tanlang</button>
+</div>
+
+<div id="quizScreen" class="screen">
+  <div class="quiz-header">
+    <div class="q-counter" id="qCounter">1/40</div>
+    <div class="prog-wrap"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div class="score-live" id="scoreLive">✓ 0</div>
+  </div>
+  <div class="quiz-body">
+    <div class="variant-tag" id="varTag">📋 VARIANT A</div>
+    <div class="q-text" id="qText"></div>
+    <div class="opts" id="optsGrid"></div>
+    <div class="feedback" id="feedbackBox"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQ()">Keyingisi →</button>
+  </div>
+</div>
+
+<div id="resultScreen" class="screen">
+  <div class="res-emoji" id="resEmoji">🏆</div>
+  <div class="res-title" id="resTitle">Ajoyib!</div>
+  <div class="res-big" id="resBig">0%</div>
+  <div class="res-desc" id="resDesc"></div>
+  <div class="res-cards">
+    <div class="res-card c"><div class="num" id="rcCorrect">0</div><div class="lbl">To'g'ri</div></div>
+    <div class="res-card w"><div class="num" id="rcWrong">0</div><div class="lbl">Noto'g'ri</div></div>
+    <div class="res-card p"><div class="num" id="rcPct">0%</div><div class="lbl">Ball</div></div>
+  </div>
+  <div class="res-btns">
+    <button class="home-btn" onclick="goHome()">🏠 Bosh sahifa</button>
+    <button class="restart-btn" onclick="restartSame()">🔄 Qaytadan</button>
+  </div>
+</div>
+
+<script>
+const ALL = [
+  // ===== MIKROIQTISODIYOT MASALALAR =====
+  {t:"masala",q:"FC=60,000 UZS, VC=90,000 UZS, Q=3,000 dona. AFC=?",a:"AFC = FC/Q = 60,000/3,000 = 20 UZS",w:["AFC = 30 UZS","AFC = 50 UZS","AFC = 15 UZS"]},
+  {t:"masala",q:"ATC=$10, P=$14, Q=80. Foyda=?",a:"Foyda = (P-ATC)×Q = (14-10)×80 = $320",w:["Foyda = $400","Foyda = $280","Foyda = $240"]},
+  {t:"masala",q:"ATC=$7, P=$6, Q=65. Natija=?",a:"Foyda = (6-7)×65 = -$65 (zarar)",w:["Foyda = +$65","Zarar = -$130","Foyda = +$130"]},
+  {t:"masala",q:"TC=50Q+2Q², P=$250. Foydani max qiluvchi Q=?",a:"MR=MC → 250=50+4Q → Q=50",w:["Q=40","Q=60","Q=25"]},
+  {t:"masala",q:"TC=50Q+2Q², Q=50. TR=?",a:"TR = 250×50 = $12,500",w:["TR=$10,000","TR=$15,000","TR=$8,000"]},
+  {t:"masala",q:"TC=50Q+2Q², Q=50. TC=?",a:"TC = 50(50)+2(50²) = 2,500+5,000 = $7,500",w:["TC=$6,000","TC=$8,000","TC=$5,000"]},
+  {t:"masala",q:"TC=50Q+2Q², Q=50, TR=$12,500, TC=$7,500. Foyda=?",a:"Foyda = 12,500-7,500 = $5,000",w:["Foyda=$4,000","Foyda=$6,000","Foyda=$3,000"]},
+  {t:"masala",q:"TC=40Q+Q², P=$240. Foydani max qiluvchi Q=?",a:"MR=MC → 240=40+2Q → Q=100",w:["Q=80","Q=120","Q=60"]},
+  {t:"masala",q:"TC=40Q+Q², Q=100. TR=?",a:"TR = 240×100 = $24,000",w:["TR=$20,000","TR=$28,000","TR=$18,000"]},
+  {t:"masala",q:"TC=40Q+Q², Q=100. TC=?",a:"TC = 40(100)+100² = 4,000+10,000 = $14,000",w:["TC=$12,000","TC=$16,000","TC=$10,000"]},
+  {t:"masala",q:"TC=40Q+Q², TR=$24,000, TC=$14,000. Foyda=?",a:"Foyda = 24,000-14,000 = $10,000",w:["Foyda=$8,000","Foyda=$12,000","Foyda=$6,000"]},
+  {t:"masala",q:"Qd=18-2P, Qs=2+2P. Muvozanat narx Pe=?",a:"18-2P=2+2P → 16=4P → Pe=4",w:["Pe=3","Pe=5","Pe=2"]},
+  {t:"masala",q:"Qd=18-2P, Qs=2+2P, Pe=4. Muvozanat miqdor Qe=?",a:"Qe = 18-2(4) = 10 dona",w:["Qe=8","Qe=12","Qe=6"]},
+  {t:"masala",q:"Qd=10-P, Qs=1+2P. Muvozanat narx Pe=?",a:"10-P=1+2P → 9=3P → Pe=3",w:["Pe=2","Pe=4","Pe=5"]},
+  {t:"masala",q:"Qd=10-P, Qs=1+2P, Pe=3. Muvozanat miqdor Qe=?",a:"Qe = 10-3 = 7 dona",w:["Qe=5","Qe=9","Qe=6"]},
+  {t:"masala",q:"Qd=180-25P, Qs=-40+30P. Muvozanat narx Pe=?",a:"180-25P=-40+30P → 220=55P → Pe=4 so'm",w:["Pe=3 so'm","Pe=5 so'm","Pe=6 so'm"]},
+  {t:"masala",q:"Qd=180-25P, Qs=-40+30P, Pe=4. Muvozanat miqdor Qe=?",a:"Qe = 180-25(4) = 80 dona",w:["Qe=60","Qe=100","Qe=70"]},
+  // ===== MIKROIQTISODIYOT NAZARIY =====
+  {t:"nazariy",q:"Bozor muvozanat nuqtasi qaysi?",a:"Talab va taklif egri chiziqlari kesishgan nuqta, Qd=Qs bo'ladi",w:["Narx eng yuqori bo'lgan nuqta","Taklif eng ko'p bo'lgan nuqta","Faqat xaridorlar qaror qiladigan nuqta"]},
+  {t:"nazariy",q:"Qisqa muddatli o'rtacha o'zgaruvchan xarajatlar (SAVC) nima?",a:"SAVC = TVC/Q (o'zgaruvchan xarajatlar / ishlab chiqarish hajmi)",w:["SAVC = FC/Q","SAVC = TC/Q","SAVC = MC×Q"]},
+  {t:"nazariy",q:"Umumiy xarajatlar (TC) nima?",a:"TC = FC + VC (doimiy + o'zgaruvchan xarajatlar)",w:["TC = TR - Foyda","TC = ATC×P","TC = MC + AC"]},
+  {t:"nazariy",q:"O'rtacha o'zgaruvchan xarajatlar (AVC) nima?",a:"AVC = TVC/Q",w:["AVC = FC/Q","AVC = TC/P","AVC = MC - AFC"]},
+  {t:"nazariy",q:"O'rtacha doimiy xarajatlar (AFC) nima?",a:"AFC = FC/Q",w:["AFC = TC/Q","AFC = VC/Q","AFC = ATC - MC"]},
+  {t:"nazariy",q:"ATC formulasi nima?",a:"ATC = TC/Q yoki ATC = AFC + AVC",w:["ATC = FC×Q","ATC = TR/Q","ATC = MC/Q"]},
+  {t:"nazariy",q:"Monopolist foydani qachon maksimallashtiradi?",a:"MR=MC bo'lgan ishlab chiqarish hajmida",w:["P=MC bo'lganda","TR eng katta bo'lganda","ATC=P bo'lganda"]},
+  {t:"nazariy",q:"Marginal xarajatlar (MC) formulasi?",a:"MC = ΔTC/ΔQ",w:["MC = TC/Q","MC = VC+FC","MC = ATC×Q"]},
+  {t:"nazariy",q:"O'rtacha umumiy xarajatlar (ATC) nimaga teng?",a:"ATC = TC/Q = AFC + AVC",w:["ATC = TR/Q","ATC = FC×VC","ATC = MC+TC"]},
+  {t:"nazariy",q:"O'rtacha xarajatlar (AC) formulasi?",a:"AC = TC/Q",w:["AC = FC+VC","AC = TR-TC","AC = P×Q"]},
+  {t:"nazariy",q:"Marginal xarajatlar (MC) qaysi ifodalarda?",a:"MC = ΔTC/ΔQ",w:["MC = TC/Q","MC = ATC/Q","MC = P-AVC"]},
+  {t:"nazariy",q:"Foydani maksimallashtirish sharti?",a:"MR=MC bo'lganda firma foydani maksimallashtiradi",w:["P=ATC bo'lganda","TR=TC bo'lganda","MR=ATC bo'lganda"]},
+  {t:"nazariy",q:"Firma MR=MC bo'lgan nuqtada nima qiladi?",a:"Foydani maksimallashtiruvchi miqdorda ishlab chiqaradi",w:["Ishlab chiqarishni to'xtatadi","Narxni oshiradi","Xarajatlarni kamaytiradi"]},
+  {t:"nazariy",q:"Ishlab chiqarish omillarining maksimal ishlatilishi nimaga olib keladi?",a:"Ishlab chiqarish imkoniyatlari chegarasiga (PPF) yaqin ishlashga, samaradorlik oshadi",w:["Narxlarning oshishiga","Ishsizlikning ko'payishiga","Monopoliyaning kuchayishiga"]},
+  {t:"nazariy",q:"Foydani maksimallashtirish kimlarning manfaatlariga javob beradi?",a:"Aksiyadorlar va firma egalarining manfaatlariga",w:["Faqat davlat manfaatlariga","Iste'molchilar manfaatlariga","Ishchilar manfaatlariga"]},
+  {t:"nazariy",q:"Talab egri chizig'ini o'ngga siljituvchi omillar?",a:"Daromad oshishi, o'rinbosar tovar narxining ko'tarilishi, xaridorlar soni ko'payishi",w:["Narxning oshishi","Taklifning kamayishi","Ishlab chiqarish xarajatlarining oshishi"]},
+  {t:"nazariy",q:"Tovar narxining tushishiga nima sabab bo'ladi?",a:"Taklifning ortishi yoki talabning kamayishi",w:["Talabning oshishi","Daromadning kamayishi","Monopoliyaning kuchayishi"]},
+  {t:"nazariy",q:"Talabning narxsiz omili?",a:"Daromad darajasi, xaridorlar soni, didlar va afzalliklar, kutishlar, o'rinbosar tovarlar narxi",w:["Faqat narx omili","Taklif miqdori","Ishlab chiqarish texnologiyasi"]},
+  {t:"nazariy",q:"Taklifning narxsiz omili?",a:"Ishlab chiqarish xarajatlari, texnologiya, soliqlar, subsidiyalar, ishlab chiqaruvchilar soni",w:["Xaridorlar didi","Daromad darajasi","O'rinbosar tovarlar narxi"]},
+  {t:"nazariy",q:"Firmaning doimiy xarajatlari nima?",a:"Ishlab chiqarish hajmidan qat'i nazar o'zgarmaydigan xarajatlar: ijara, amortizatsiya, doimiy maosh",w:["Xom ashyo xarajatlari","Energiya xarajatlari","Soatbay ishchilar ish haqi"]},
+  {t:"nazariy",q:"Mukammal raqobat bozorining asosiy xususiyatlari?",a:"Ko'p sonli firmalar, gomogen mahsulot, bozorga erkin kirish-chiqish, firma narx oluvchi",w:["Bitta sotuvchi bor","Differensiallangan mahsulot","Bozorga kirish qiyin"]},
+  {t:"nazariy",q:"Monopolistik raqobat bozorida tovar qanday?",a:"Differensiallangan, ammo bir-biriga yaqin o'rinbosar tovarlar",w:["Bir xil gomogen tovar","Bitta tovar turi","Davlat belgilaydigan tovar"]},
+  {t:"nazariy",q:"Firma uchun eng muhim maqsad?",a:"Foydani maksimallashtirish",w:["Ishlab chiqarishni kamaytirish","Bozorni monopollashtirish","Xarajatlarni oshirish"]},
+  {t:"nazariy",q:"Taklifning narxsiz omili (to'liq ro'yxat)?",a:"Resurslar narxi, texnologiya, davlat siyosati (soliq/subsidiya), kelajakka bo'lgan kutishlar",w:["Talabning oshishi","Iste'molchi didi","Xaridorlar soni"]},
+  {t:"nazariy",q:"An'anaviy iqtisodiy tizimda ishlab chiqarish qarorlari qanday qabul qilinadi?",a:"An'analar, urf-odatlar va diniy qadriyatlar asosida avloddan avlodga o'tib kelgan tartib bo'yicha",w:["Davlat buyrug'i asosida","Bozor narxi orqali","Xalqaro tashkilotlar yordamida"]},
+  {t:"nazariy",q:"Qaysi xususiyat bozor iqtisodiyotiga tegishli emas?",a:"Markazlashtirilgan rejalashtirish",w:["Xususiy mulkchilik","Erkin narx","Raqobat"]},
+  {t:"nazariy",q:"Aralash iqtisodiy tizim nima?",a:"Bozor va davlat boshqaruvi elementlarini birlashtirgan iqtisodiy tizim",w:["Faqat bozor mexanizmi","Davlat barcha qarorlarni qabul qiladi","An'analar asosida boshqariladi"]},
+  {t:"nazariy",q:"To'liq bandlik, inflyatsiyasizlik, ijtimoiy kafolatlar qaysi tizim afzalliklari?",a:"Rejali (buyruqbozlik) iqtisodiy tizimning rasmiy e'lon qilingan afzalliklari",w:["Bozor iqtisodiyoti","An'anaviy tizim","Aralash tizim"]},
+  {t:"nazariy",q:"An'anaviy tizimda qanday mulkchilik mavjud?",a:"Jamoaviy yoki qabila mulkchiligi (yer va resurslar qabila/oilaga tegishli)",w:["Xususiy mulkchilik ustuvor","Davlat mulkchiligi","Aralash mulkchilik"]},
+  {t:"nazariy",q:"Qaysi tizimda qishloq xo'jaligi ustuvor, texnologiya past?",a:"An'anaviy iqtisodiy tizim",w:["Bozor iqtisodiyoti","Rejali iqtisodiyot","Aralash iqtisodiyot"]},
+  {t:"nazariy",q:"Aralash iqtisodiyot bilan tavsiflanadi?",a:"Xususiy va davlat sektori birga faoliyat yuritishi; bozor mexanizmi va davlat aralashuvi",w:["Faqat xususiy sektor","Faqat davlat sektori","Faqat an'analar"]},
+  {t:"nazariy",q:"Natural xo'jalik qaysi tizimga xos?",a:"An'anaviy iqtisodiy tizimga xos",w:["Bozor iqtisodiyotiga","Rejali tizimga","Aralash tizimga"]},
+  {t:"nazariy",q:"Rejali tizim (sotsializm) nima?",a:"Davlat ishlab chiqarish vositalarini nazorat qiladi, resurslar markazlashtirilgan rejalashtirish orqali taqsimlanadi",w:["Bozor narxi boshqaradi","An'analar asosida qarorlar","Xususiy firmalar erkin raqobat qiladi"]},
+  {t:"nazariy",q:"Aralash iqtisodiy tizim (boshqa ta'rif)?",a:"Bozor va rejali iqtisodiyot elementlarini birlashtirgan tizim; xususiy va davlat sektori birga mavjud",w:["Faqat bozor mexanizmi ishlaydi","Faqat davlat sektori","Faqat an'analar asosida"]},
+  {t:"nazariy",q:"Qaysi tizimda hukumat roli faqat mulkni himoya qilishga cheklangan?",a:"Sof bozor iqtisodiyoti (laissez-faire kapitalizmi)",w:["Rejali iqtisodiyot","An'anaviy iqtisodiyot","Aralash iqtisodiyot"]},
+  {t:"nazariy",q:"Qaysi tizim markazlashtirilgan rejalashtirishga asoslanadi?",a:"Rejali (buyruqbozlik) iqtisodiy tizim",w:["Bozor iqtisodiyoti","An'anaviy tizim","Aralash tizim"]},
+  {t:"nazariy",q:"An'anaviy iqtisodiyotning asosiy elementi?",a:"An'analar va urf-odatlar",w:["Davlat rejalari","Bozor narxi","Xalqaro savdo"]},
+  {t:"nazariy",q:"Bozor iqtisodiyotiga taalluqli emas?",a:"Markazlashtirilgan rejalashtirish",w:["Narx mexanizmi","Raqobat","Xususiy mulk"]},
+  {t:"nazariy",q:"Bozor regulyatorining roli nima?",a:"Narx mexanizmi (talab va taklif asosida shakllanadigan narx) bozorni boshqaradi",w:["Davlat barcha narxlarni belgilaydi","An'analar narxni belgilaydi","Monopoliya narxni belgilaydi"]},
+  {t:"nazariy",q:"Qaysi tizimda ishchilar yetarli rag'batga ega emas?",a:"Rejali (buyruqbozlik) iqtisodiy tizimda",w:["Bozor iqtisodiyotida","An'anaviy tizimda","Aralash tizimda"]},
+  {t:"nazariy",q:"Qaysi bozorda firmalar soni eng kam?",a:"Monopoliya bozorida (bitta firma)",w:["Mukammal raqobat bozorida","Oligopoliya bozorida","Monopolistik raqobat bozorida"]},
+  {t:"nazariy",q:"Sof raqobatdagi firmalar soni?",a:"Juda ko'p (cheksiz sondagi) firmalar",w:["Bitta firma","2-10 ta firma","O'nlab firmalar"]},
+  {t:"nazariy",q:"Iqtisodiy foyda nima?",a:"Iqtisodiy foyda = Umumiy daromad − Umumiy xarajatlar (aniq + muqobil xarajatlar)",w:["Buxgalteriya foydasi","Faqat aniq xarajatlar ayirilgan foyda","Davlat subsidiyasi"]},
+  {t:"nazariy",q:"Mukammal raqobatga xos emas qaysi omil?",a:"Narxni bir firma belgilashi. Mukammal raqobatda firmalar narx oluvchi hisoblanadi",w:["Ko'p sonli firmalar","Gomogen mahsulot","Erkin kirish-chiqish"]},
+  {t:"nazariy",q:"Sof raqobat bozorida narxni kim o'rnatadi?",a:"Bozorning o'zi (talab va taklif), firma narxni qabul qiluvchi sifatida ishlaydi",w:["Eng kuchli firma","Davlat","Xalqaro tashkilot"]},
+  {t:"nazariy",q:"Mukammal raqobatga xos emas qaysi omil?",a:"Narxni bir firma belgilashi (narx-belgilovchi). Mukammal raqobatda firmalar narx oluvchi hisoblanadi",w:["Ko'p sonli firmalar","Gomogen mahsulot","Erkin kirish-chiqish"]},
+  {t:"nazariy",q:"Monopoliya bozorida narxni kim belgilaydi?",a:"Monopolist firma o'zi belgilaydi (narx-belgilovchi)",w:["Davlat belgilaydi","Bozor kuchlari belgilaydi","Xaridorlar belgilaydi"]},
+  {t:"nazariy",q:"Monopoliya deganda?",a:"Bitta firma butun tarmoqni nazorat qilishi va yagona sotuvchi bo'lishi",w:["Ikkita firma bor bozor","Ko'p firmalar bor bozor","Davlat boshqaradigan bozor"]},
+  {t:"nazariy",q:"Bir nechta yirik firmalar hukmron bo'lsa, bozor qanday?",a:"Oligopoliya bozori",w:["Monopoliya bozori","Mukammal raqobat bozori","Monopolistik raqobat bozori"]},
+  {t:"nazariy",q:"Oligopoliyadagi raqobatdagi firmalar soni?",a:"Bir nechta (2-10 atrofida) yirik firma",w:["Bitta yirik firma","Juda ko'p kichik firmalar","100 dan ortiq firmalar"]},
+  {t:"nazariy",q:"Differensiallangan, ammo yaqin o'rinbosar mahsulotlar qaysi bozorda?",a:"Monopolistik raqobat bozorida",w:["Oligopoliya bozorida","Monopoliya bozorida","Mukammal raqobat bozorida"]},
+  {t:"nazariy",q:"Mukammal va monopolistik raqobatning umumiy belgisi?",a:"Ikkalasida ham ko'p sonli firmalar va bozorga erkin kirish-chiqish mavjud",w:["Bitta firma bor","Differensiallangan mahsulot","Bozorga kirish qiyin"]},
+  {t:"nazariy",q:"Monopolistik raqobat nima?",a:"Ko'p firmalar, differensiallangan mahsulotlar, bozorga nisbatan erkin kirish mavjud bozor turi",w:["Bitta firma bor bozor","Davlat nazoratidagi bozor","Bir xil tovar sotadigan bozor"]},
+  {t:"nazariy",q:"Firmalar soni: bir nechta, narx nazorati: kuchli, kirish: qiyin — qaysi bozor?",a:"Oligopoliya bozori",w:["Monopoliya bozori","Mukammal raqobat","Monopolistik raqobat"]},
+  {t:"nazariy",q:"Narxlar urushi qaysi bozor tuzilmasiga xos?",a:"Oligopoliya bozori",w:["Monopoliya bozori","Mukammal raqobat","Monopolistik raqobat"]},
+  {t:"nazariy",q:"Oligopoliya mohiyati qaysinikiga yaqin?",a:"Monopoliyaga yaqinroq (kuchli narx nazorati mavjud)",w:["Mukammal raqobatga yaqin","An'anaviy bozorga yaqin","Davlat boshqaruviga yaqin"]},
+  {t:"nazariy",q:"Ishlab chiqarish omillari qaysilar?",a:"Yer (tabiiy resurslar), kapital, mehnat va tadbirkorlik",w:["Faqat mehnat va kapital","Faqat yer va texnologiya","Pul va kredit"]},
+  {t:"nazariy",q:"Firmaning xarajatlari qaysi fanda o'rganiladi?",a:"Mikroiqtisodiyot fanida",w:["Makroiqtisodiyotda","Statistikada","Matematikada"]},
+  {t:"nazariy",q:"Muqobil narx (opportunity cost) nima?",a:"Biror qaror qabul qilishda qo'ldan boy berilgan eng yaxshi alternativ imkoniyatning qiymati",w:["Bozor narxi","Ishlab chiqarish narxi","Hisob-kitob narxi"]},
+  {t:"nazariy",q:"Quyidagilardan qaysi biri ishlab chiqarish omili emas?",a:"Pul (mablag') ishlab chiqarish omili hisoblanmaydi; u kapitalning shakli",w:["Mehnat","Yer","Kapital"]},
+  {t:"nazariy",q:"Bozor iqtisodiyotida narxlarni nima belgilaydi?",a:"Talab va taklif kuchlari",w:["Davlat","Monopoliya","Xalqaro tashkilotlar"]},
+  {t:"nazariy",q:"Raqobat, erkin narx, xususiy mulk — qaysi tizim xususiyati?",a:"Bozor iqtisodiyoti xususiyatlari",w:["Rejali tizim","An'anaviy tizim","Sotsializm"]},
+  {t:"nazariy",q:"Ko'pgina zamonaviy mamlakatlar uchun qanday tizim xos?",a:"Aralash iqtisodiy tizim",w:["Sof bozor tizimi","Rejali tizim","An'anaviy tizim"]},
+  {t:"nazariy",q:"Bozor muvozanatida narx va miqdor qanday belgilanadi?",a:"Talab va taklif kesishgan nuqtada muvozanat narx va miqdor belgilanadi",w:["Davlat tomonidan belgilanadi","Faqat sotuvchilar belgilaydi","Faqat xaridorlar belgilaydi"]},
+  {t:"nazariy",q:"Bir-birini to'ldiruvchi mahsulotlarga misol?",a:"Avtomobil va benzin, printer va kartrij, choy va shakar",w:["Choy va qahva","Avtomobil va velosiped","Non va go'sht"]},
+  {t:"nazariy",q:"Mikroiqtisodiyot va makroiqtisodiyot farqi?",a:"Mikroiqtisodiyot alohida firmalar va bozorlarni; Makroiqtisodiyot yalpi iqtisodiyotni (YaIM, inflyatsiya) o'rganadi",w:["Hech qanday farq yo'q","Mikro faqat narxlarni o'rganadi","Makro faqat savdoni o'rganadi"]},
+  {t:"nazariy",q:"Xo'jalik yurituvchi subyektlar xatti-harakatini qaysi bo'lim o'rganadi?",a:"Mikroiqtisodiyot",w:["Makroiqtisodiyot","Statistika","Moliya"]},
+  {t:"nazariy",q:"Talab qonuni nima deydi?",a:"Narx oshsa talab kamayadi, narx tushsa talab ortadi (boshqa omillar o'zgarmasa)",w:["Narx oshsa talab ham oshadi","Narx o'zgarmasa talab o'zgarmaydi","Talab faqat daromadga bog'liq"]},
+  {t:"nazariy",q:"Differensiallangan mahsulot qaysi bozorda bo'ladi?",a:"Monopolistik raqobat bozorida",w:["Mukammal raqobat bozorida","Monopoliya bozorida","Oligopoliya bozorida"]},
+  // ===== MAKROIQTISODIYOT NAZARIY =====
+  {t:"nazariy",q:"YaIMni hisoblash usullari qaysilar?",a:"Xarajatlar usuli (C+I+G+Xn), daromadlar usuli (ish haqi+foiz+renta+foyda), qo'shilgan qiymat usuli",w:["Faqat xarajatlar usuli","Faqat eksport-import farqi","Faqat daromadlar usuli"]},
+  {t:"nazariy",q:"Iqtisodiy o'sish qanday o'lchanadi?",a:"Real YaIMning yillik o'sish sur'ati (%): (YaIM joriy - YaIM bazis) / YaIM bazis × 100%",w:["Nominal YaIM o'sishi orqali","Aholi soni o'sishi orqali","Eksport hajmi orqali"]},
+  {t:"nazariy",q:"O'zbekiston fuqarosi Koreyada ishlasa, daromadi qayerga kiradi?",a:"Yalpi Milliy Mahsulot (YaMM/GNP) ga kiradi, YaIMga kirmaydi",w:["YaIMga kiradi","Ikkalasiga kiradi","Hech biriga kirmaydi"]},
+  {t:"nazariy",q:"Davlat byudjeti taqchilligi qachon paydo bo'ladi?",a:"Byudjet xarajatlari daromadlardan oshib ketganda, G > T bo'lganda",w:["G < T bo'lganda","G = T bo'lganda","Eksport kamayib ketganda"]},
+  {t:"nazariy",q:"Sof investitsiyalar nima?",a:"Sof investitsiyalar = Yalpi investitsiyalar − Amortizatsiya (eskirish)",w:["Yalpi investitsiyalar + Amortizatsiya","Faqat xorijiy investitsiyalar","Davlat investitsiyalari"]},
+  {t:"nazariy",q:"Sof ichki mahsulot (SIM) nima?",a:"SIM = YaIM − Amortizatsiya (asosiy kapitalning eskirishi)",w:["SIM = YaIM + Eksport","SIM = YaIM × Soliq","SIM = YaIM / Aholi"]},
+  {t:"nazariy",q:"YaIMni daromadlar bo'yicha hisoblashda nima kiritilmaydi?",a:"O'tkazma to'lovlar (transferlar) — pensiya, nafaqa va subsidiyalar",w:["Ish haqi","Renta","Foiz daromadi"]},
+  {t:"nazariy",q:"YaIM qanday narxlarda hisoblanadi?",a:"Nominal YaIM — joriy yil narxlarida; Real YaIM — bazis yil narxlarida",w:["Faqat joriy narxlarda","Faqat bazis narxlarda","Xalqaro narxlarda"]},
+  {t:"nazariy",q:"YaIM deflyatori nimaga teng?",a:"YaIM deflyatori = (Nominal YaIM / Real YaIM) × 100%",w:["Real YaIM / Nominal YaIM × 100","CPI × 100","Eksport / Import × 100"]},
+  {t:"nazariy",q:"Ekstensiv iqtisodiy o'sish nima?",a:"Ishlab chiqarish resurslarining miqdorini ko'paytirish hisobiga o'sish (ko'proq yer, mehnat, kapital)",w:["Texnologiyani yaxshilash orqali o'sish","Samaradorlikni oshirish orqali","Eksportni ko'paytirish orqali"]},
+  {t:"nazariy",q:"Intensiv iqtisodiy o'sish nima?",a:"Resurslar samaradorligini oshirish hisobiga o'sish (texnologiya, bilim, malaka)",w:["Resurslar miqdorini ko'paytirish","Aholi sonini oshirish","Import o'rnini bosish"]},
+  {t:"nazariy",q:"Yalpi talab (AD) tarkibi nimalardan iborat?",a:"AD = C (iste'mol) + I (investitsiya) + G (davlat xarajatlari) + Xn (sof eksport)",w:["AD = C + I + G","AD = C + I + Eksport","AD = YaIM - Soliq"]},
+  {t:"nazariy",q:"Strukturaviy ishsizlik nima?",a:"Texnologiya yoki iqtisodiyot tuzilishi o'zgarishi natijasida malakasi mos kelmaydigan ishchilarning ishsizligi",w:["O'z ixtiyori bilan ishni tark etish","Iqtisodiy inqiroz sababli ishsizlik","Mavsumiy ishsizlik"]},
+  {t:"nazariy",q:"Friksion ishsizlik nima?",a:"Ishchilarning bir ish joyidan ikkinchisiga o'tish jarayonidagi vaqtinchalik ishsizlik",w:["Texnologiya o'zgarishi sababli","Iqtisodiy pasayish sababli","Malaka yo'qligi sababli"]},
+  {t:"nazariy",q:"Tabiiy ishsizlik nima?",a:"Friksion va strukturaviy ishsizliklarning yig'indisi — iqtisodiyot uchun normal holat",w:["Faqat friksion ishsizlik","Davriy va friksion ishsizlik","Barcha turdagi ishsizlik"]},
+  {t:"nazariy",q:"Davriy ishsizlik nima?",a:"Iqtisodiy tsiklning inqiroz fazasida yalpi talabning pasayishi natijasida yuzaga keluvchi ishsizlik",w:["Texnologiya o'zgargani uchun","O'z ixtiyori bilan ketish","Malakasi mos kelmaydigan ishchilar"]},
+  {t:"nazariy",q:"Tish pastasi zavodida avtomatlashtirish tufayli ishdan ketgan — qaysi ishsizlik?",a:"Strukturaviy ishsizlik (texnologiya o'zgargani uchun)",w:["Friksion ishsizlik","Davriy ishsizlik","Tabiiy ishsizlik"]},
+  {t:"nazariy",q:"Professor yaxshiroq joyga o'tish uchun ishni tark etdi — qaysi ishsizlik?",a:"Friksion ishsizlik (o'z ixtiyori bilan o'tish)",w:["Strukturaviy ishsizlik","Davriy ishsizlik","Tabiiy ishsizlik"]},
+  {t:"nazariy",q:"Iqtisodiy inqiroz sababli yalpi talab pasaydi, ishsizlik ko'tarildi — qaysi?",a:"Davriy ishsizlik",w:["Friksion ishsizlik","Strukturaviy ishsizlik","Tabiiy ishsizlik"]},
+  {t:"nazariy",q:"Sertifikati yo'q bo'lgani uchun ishdan bo'shatildi — qaysi ishsizlik?",a:"Strukturaviy ishsizlik (malakasi talabga mos emas)",w:["Friksion ishsizlik","Davriy ishsizlik","Tabiiy ishsizlik"]},
+  {t:"nazariy",q:"Ishchi kuchi (Labor force) formulasi?",a:"Ishchi kuchi = Bandlar + Ishsizlar (faol ish qidiruvchilar)",w:["Faqat bandlar soni","Aholi soni − bolalar","Mehnatga layoqatli aholi"]},
+  {t:"nazariy",q:"Tikuv firmasida avtomatlashtirish tufayli ishdan ketgan — qaysi ishsizlik?",a:"Strukturaviy ishsizlik",w:["Friksion ishsizlik","Davriy ishsizlik","Tabiiy ishsizlik"]},
+  {t:"nazariy",q:"Fuqarolardan majburiy undiriladigan davlat to'lovi nima?",a:"Soliq — davlat foydasiga qonun asosida undiriladigan majburiy to'lov",w:["Subsidiya","Grant","Kredit"]},
+  {t:"nazariy",q:"Hukumatning moliyaviy rejasi ma'lum davr uchun nima deyiladi?",a:"Davlat byudjeti",w:["Davlat qarzi","Pul-kredit siyosati","Fiskal reja"]},
+  {t:"nazariy",q:"Mahsulot yoki xizmat qiymatidan undiriladigan soliqlar?",a:"Bilvosita soliqlar (QQS — qo'shilgan qiymat solig'i, aktsiz va h.k.)",w:["To'g'ridan-to'g'ri soliqlar","Daromad solig'i","Mulk solig'i"]},
+  {t:"nazariy",q:"Byudjet xarajatlarining daromadlardan oshib ketishi?",a:"Byudjet taqchilligi (deficit)",w:["Byudjet profitsiti","Byudjet muvozanati","Davlat qarzi"]},
+  {t:"nazariy",q:"YaIMni daromadlar bo'yicha hisoblashda nima kiritilmaydi (2)?",a:"O'tkazma to'lovlar (transferlar) va davlat obligatsiyalari bo'yicha foiz to'lovlari",w:["Ish haqi va maosh","Renta va foiz","Foyda va dividend"]},
+  {t:"nazariy",q:"Davlat qarzi nima?",a:"Hukumatning yillar davomida to'plangan byudjet taqchilliklarining yig'indisi",w:["Joriy yil byudjet taqchilligi","Xorijiy investitsiyalar","Davlat tomonidan berilgan kreditlar"]},
+  {t:"nazariy",q:"Kobb-Duglas funksiyasida α=0,3 bo'lsa, kapital va mehnat ulushi?",a:"Kapital ulushi = 30%; Mehnat ulushi = 70%",w:["Kapital 70%, Mehnat 30%","Kapital 50%, Mehnat 50%","Kapital 20%, Mehnat 80%"]},
+  {t:"nazariy",q:"Kobb-Duglas funksiyasida α=0,2 bo'lsa?",a:"Kapital ulushi = 20%; Mehnat ulushi = 80%",w:["Kapital 30%, Mehnat 70%","Kapital 50%, Mehnat 50%","Kapital 40%, Mehnat 60%"]},
+  {t:"nazariy",q:"Kobb-Duglas funksiyasida α=0,5 bo'lsa?",a:"Kapital ulushi = 50%; Mehnat ulushi = 50%",w:["Kapital 30%, Mehnat 70%","Kapital 20%, Mehnat 80%","Kapital 40%, Mehnat 60%"]},
+  {t:"nazariy",q:"Kobb-Duglas funksiyasida α=0,4 bo'lsa?",a:"Kapital ulushi = 40%; Mehnat ulushi = 60%",w:["Kapital 30%, Mehnat 70%","Kapital 50%, Mehnat 50%","Kapital 20%, Mehnat 80%"]},
+  {t:"nazariy",q:"AD egri chizig'ining narxsiz omillari?",a:"Iste'mol (C), investitsiya (I), davlat xarajatlari (G), sof eksport (Xn) hamda kutishlar va xorijiy daromad",w:["Faqat narx darajasi","Faqat soliqlar","Faqat ish haqi"]},
+  {t:"nazariy",q:"Qisqa muddatli SRAS egri chizig'ining narxsiz omillari?",a:"Ishlab chiqarish xarajatlari (resurslar narxi, ish haqi), texnologiya, subsidiyalar, soliqlar",w:["Iste'molchi daromadi","Xorijiy daromad","Aholi soni"]},
+  {t:"nazariy",q:"Korxonalarga soliqlar ko'paysa AD-AS da o'zgarish?",a:"SRAS chap tomonga siljiydi, narx ko'tariladi, YaIM pasayadi",w:["AD o'ngga siljiydi","YaIM oshadi","Narx darajasi kamayadi"]},
+  {t:"nazariy",q:"Korxonalarga soliqlar kamaysa AD-AS da o'zgarish?",a:"SRAS o'ngga siljiydi, narx pasayadi, YaIM oshadi",w:["AD chapga siljiydi","YaIM kamayadi","Narx darajasi ko'tariladi"]},
+  {t:"nazariy",q:"Resurslar narxi ko'tarilsa AD-AS da o'zgarish?",a:"SRAS chap tomonga siljiydi, narx darajasi ko'tariladi (stagflyatsiya xavfi), YaIM pasayadi",w:["AD o'ngga siljiydi","YaIM oshadi","SRAS o'ngga siljiydi"]},
+  {t:"nazariy",q:"Resurslar narxi pasaysa AD-AS da o'zgarish?",a:"SRAS o'ngga siljiydi, narx darajasi pasayadi, YaIM oshadi",w:["AD chapga siljiydi","YaIM kamayadi","Narx darajasi oshadi"]},
+  {t:"nazariy",q:"Korxonalarga subsidiyalar oshsa AD-AS da o'zgarish?",a:"SRAS o'ngga siljiydi, narx pasayadi, YaIM oshadi",w:["AD chapga siljiydi","SRAS chapga siljiydi","YaIM kamayadi"]},
+  {t:"nazariy",q:"Subsidiyalar kamaysa AD-AS da o'zgarish?",a:"SRAS chap tomonga siljiydi, narx oshadi, YaIM kamayadi",w:["AD o'ngga siljiydi","YaIM oshadi","Narx darajasi kamayadi"]},
+  {t:"nazariy",q:"Iste'mol (C) ko'paysa AD-AS da o'zgarish?",a:"AD o'ngga siljiydi, narx darajasi va YaIM oshadi",w:["AD chapga siljiydi","SRAS chapga siljiydi","YaIM kamayadi"]},
+  {t:"nazariy",q:"Iste'mol (C) kamaysa AD-AS da o'zgarish?",a:"AD chap tomonga siljiydi, narx darajasi va YaIM pasayadi",w:["AD o'ngga siljiydi","YaIM oshadi","SRAS o'ngga siljiydi"]},
+  {t:"nazariy",q:"Investitsiyalar (I) ko'paysa AD-AS da o'zgarish?",a:"AD o'ngga siljiydi, narx darajasi va YaIM oshadi",w:["SRAS chapga siljiydi","YaIM kamayadi","Narx darajasi pasayadi"]},
+  {t:"nazariy",q:"Investitsiyalar (I) kamaysa AD-AS da o'zgarish?",a:"AD chap tomonga siljiydi, narx darajasi va YaIM pasayadi",w:["AD o'ngga siljiydi","YaIM oshadi","SRAS o'ngga siljiydi"]},
+  {t:"nazariy",q:"Davlat xarajatlari (G) ko'paysa AD-AS da o'zgarish?",a:"AD o'ngga siljiydi, narx darajasi va YaIM oshadi",w:["SRAS chapga siljiydi","YaIM kamayadi","AD chapga siljiydi"]},
+  {t:"nazariy",q:"Davlat xarajatlari (G) kamaysa AD-AS da o'zgarish?",a:"AD chap tomonga siljiydi, narx darajasi va YaIM pasayadi",w:["AD o'ngga siljiydi","YaIM oshadi","SRAS o'ngga siljiydi"]},
+  {t:"nazariy",q:"Sof eksport (Xn) ko'paysa AD-AS da o'zgarish?",a:"AD o'ngga siljiydi, narx darajasi va YaIM oshadi",w:["AD chapga siljiydi","YaIM kamayadi","SRAS chapga siljiydi"]},
+  {t:"nazariy",q:"Sof eksport (Xn) kamaysa AD-AS da o'zgarish?",a:"AD chap tomonga siljiydi, narx darajasi va YaIM pasayadi",w:["AD o'ngga siljiydi","YaIM oshadi","SRAS o'ngga siljiydi"]},
+  // ===== MAKROIQTISODIYOT MASALALAR =====
+  {t:"masala",q:"Bazis yilda YaIM=200 mlrd, joriy yilda 220 mlrd. O'sish sur'ati=?",a:"O'sish sur'ati = (220-200)/200 × 100% = 10%",w:["20%","5%","15%"]},
+  {t:"masala",q:"Y=C+I, C=150+0.8Y, I=20. Muvozanat daromad Y=?",a:"Y = 150+0.8Y+20 → 0.2Y=170 → Y=850",w:["Y=750","Y=900","Y=800"]},
+  {t:"masala",q:"Y=C+I, C=70+0.8Y, I=20. Muvozanat daromad Y=?",a:"Y = 70+0.8Y+20 → 0.2Y=90 → Y=450",w:["Y=400","Y=500","Y=350"]},
+  {t:"masala",q:"Y=C+I, C=70+0.8Y, I=20, Y=450. Jamg'arma S=?",a:"S = Y - C = 450-(70+0.8×450) = 450-430 = 20",w:["S=30","S=50","S=10"]},
+  {t:"masala",q:"Y=C+I, C=150+0.8Y, I=100. Muvozanat Y=?",a:"Y = 150+0.8Y+100 → 0.2Y=250 → Y=1250",w:["Y=1000","Y=1500","Y=800"]},
+  {t:"masala",q:"Y=C+I, C=150+0.8Y, I=100, Y=1250. Jamg'arma S=?",a:"S = Y-C = 1250-(150+0.8×1250) = 1250-1150 = 100",w:["S=80","S=120","S=150"]},
+  {t:"masala",q:"Y=C+I, C=150+0.8Y, I=150. Muvozanat iste'mol C=?",a:"Y=1500. C = 150+0.8(1500) = 150+1200 = 1350",w:["C=1200","C=1000","C=1500"]},
+  {t:"masala",q:"Nominal YaIM=800, Real YaIM=500. YaIM deflyatori=?",a:"Deflyator = 800/500 × 100 = 160%",w:["150%","170%","180%"]},
+  {t:"masala",q:"A-200×$4, B-100×$6 (bazis). 2023: A-250×$8, B-150×$10. Nominal YaIM=?",a:"Nominal YaIM = 250×8+150×10 = 2000+1500 = 3500",w:["3000","4000","2800"]},
+  {t:"masala",q:"A-200×$4, B-100×$6. Real YaIM (bazis yil narxida)=?",a:"Real YaIM = 200×4+100×6 = 800+600 = 1400",w:["1200","1600","1000"]},
+  {t:"masala",q:"Nominal YaIM=3500, Real YaIM=1400. YaIM deflyatori=?",a:"Deflyator = 3500/1400 × 100 ≈ 250% (yoki 184.2% Paasche)",w:["160%","175%","300%"]},
+  {t:"masala",q:"Nominal YaIM(2022)=200×4+100×6=1400. Nominal YaIM(2023)=3500. Deflyator=?",a:"Deflyator = 3500/1400 × 100 ≈ 184-250% (usulga qarab)",w:["160%","175%","300%"]},
+  {t:"masala",q:"Real YaIM(2023) bazis narxda: A-250×$4, B-150×$6=?",a:"Real YaIM = 250×4+150×6 = 1000+900 = 1900",w:["1700","2100","1500"]},
+  {t:"masala",q:"Kobb-Duglas α=0.3: TFP=2%, K=3.5%, L=3%. Y o'sishi=?",a:"ΔY = 2+0.3×3.5+0.7×3 = 2+1.05+2.1 = 5.15% ≈ 5.2%",w:["4.5%","6.0%","3.8%"]},
+  {t:"masala",q:"Kobb-Duglas α=0.3: TFP=2.5%, K=6%, L=4%. Y o'sishi=?",a:"ΔY = 2.5+0.3×6+0.7×4 = 2.5+1.8+2.8 = 7.1%",w:["6.5%","8.0%","5.5%"]},
+  {t:"masala",q:"Kobb-Duglas α=0.4: TFP=2%, K=3.5%, L=3%. Y o'sishi=?",a:"ΔY = 2+0.4×3.5+0.6×3 = 2+1.4+1.8 = 5.2%",w:["4.5%","6.0%","3.8%"]},
+  {t:"masala",q:"Laspeyres indeksi: P0=(4,6), Q0=(200,100), P1=(8,10). IL=?",a:"IL = (8×200+10×100)/(4×200+6×100) × 100 = 2600/1400 × 100 ≈ 185.7%",w:["175%","200%","160%"]},
+  {t:"masala",q:"Paasche indeksi: P0=(4,6), Q1=(250,150), P1=(8,10). IP=?",a:"IP = (8×250+10×150)/(4×250+6×150) × 100 = 3500/1900 × 100 ≈ 184.2%",w:["175%","200%","160%"]},
+  {t:"masala",q:"Y=C+I, C=65+0.8Y, I=20. Muvozanat Y=?",a:"Y = 65+0.8Y+20 → 0.2Y=85 → Y=425",w:["Y=400","Y=450","Y=350"]},
+  {t:"masala",q:"Kobb-Duglas: Y=AK^0.3×L^0.7. TFP=2.1%, Y=6%, K=6%. L o'sishi=?",a:"6 = 2.1+0.3×6+0.7×ΔL → ΔL = (6-2.1-1.8)/0.7 = 2.1/0.7 = 3%",w:["4%","5%","2%"]},
+  {t:"masala",q:"Kobb-Duglas: α=0.3, TFP=2.3%, Y=8%, K=6%. L o'sishi=?",a:"8 = 2.3+0.3×6+0.7×ΔL → ΔL = (8-2.3-1.8)/0.7 ≈ 5.6%",w:["4%","3%","7%"]},
+  {t:"masala",q:"Y=C+I, C=150+0.8Y, I=20. Muvozanat Y=?",a:"Y = 150+0.8Y+20 → 0.2Y=170 → Y=850",w:["Y=800","Y=900","Y=750"]},
+];
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function buildVariants(){
+  const s=shuffle([...ALL]);
+  const chunks={A:s.slice(0,40),B:s.slice(40,80),C:s.slice(80,120),D:s.slice(120)};
+  return chunks;
+}
+const VARIANTS=buildVariants();
+
+// Update badges
+['A','B','C','D'].forEach(v=>{
+  document.getElementById('info'+v).textContent=VARIANTS[v].length+' ta savol';
+});
+
+let selV=null,useRandom=false,activeQs=[],curIdx=0,score=0,answered=false,lastV=null;
+
+function selectVariant(el,v){
+  document.querySelectorAll('.v-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');selV=v;
+  const b=document.getElementById('startBtn');b.disabled=false;b.textContent='Variant '+v+' — Boshlash';
+}
+function setMode(m){
+  useRandom=m==='random';
+  document.getElementById('modeRandom').classList.toggle('active',useRandom);
+  document.getElementById('modeFixed').classList.toggle('active',!useRandom);
+}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+function startQuiz(){
+  if(!selV)return;
+  lastV=selV;
+  let qs=[...VARIANTS[selV]];
+  if(useRandom)qs=shuffle(qs);
+  activeQs=qs;curIdx=0;score=0;
+  showScreen('quizScreen');renderQ();
+}
+function renderQ(){
+  const q=activeQs[curIdx];answered=false;
+  document.getElementById('qCounter').textContent=`${curIdx+1} / ${activeQs.length}`;
+  document.getElementById('progFill').style.width=`${(curIdx/activeQs.length)*100}%`;
+  document.getElementById('scoreLive').textContent=`✓ ${score}`;
+  document.getElementById('varTag').textContent=`📋 VARIANT ${lastV} — ${q.t==='masala'?'🧮 MASALA':'📚 NAZARIY'}`;
+  document.getElementById('qText').textContent=q.q;
+  document.getElementById('feedbackBox').className='feedback';
+  document.getElementById('nextBtn').style.display='none';
+  const letters=['A','B','C','D'];
+  const opts=shuffle([q.a,...q.w]);
+  const grid=document.getElementById('optsGrid');grid.innerHTML='';
+  opts.forEach((opt,i)=>{
+    const btn=document.createElement('button');btn.className='opt-btn';
+    btn.innerHTML=`<span class="opt-ltr">${letters[i]}</span><span>${opt}</span>`;
+    btn.addEventListener('click',()=>pick(btn,opt,q.a));grid.appendChild(btn);
+  });
+}
+function pick(clicked,chosen,correct){
+  if(answered)return;answered=true;
+  document.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true);
+  if(chosen===correct){
+    clicked.classList.add('correct');score++;
+    document.getElementById('feedbackBox').className='feedback correct';
+    document.getElementById('feedbackBox').textContent="✅ To'g'ri! Yaxshi!";
+  }else{
+    clicked.classList.add('wrong');
+    document.querySelectorAll('.opt-btn').forEach(b=>{if(b.querySelector('span:last-child').textContent===correct)b.classList.add('correct');});
+    document.getElementById('feedbackBox').className='feedback wrong';
+    document.getElementById('feedbackBox').textContent=`❌ Noto'g'ri. To'g'ri: ${correct}`;
+  }
+  document.getElementById('nextBtn').style.display='block';
+  document.getElementById('scoreLive').textContent=`✓ ${score}`;
+}
+function nextQ(){curIdx++;if(curIdx>=activeQs.length)showResult();else renderQ();}
+function showResult(){
+  showScreen('resultScreen');
+  const total=activeQs.length,pct=Math.round((score/total)*100);
+  let emoji,title;
+  if(pct>=90){emoji='🏆';title="Zo'r natija!";}
+  else if(pct>=75){emoji='🎯';title="Yaxshi!";}
+  else if(pct>=50){emoji='📚';title="O'rtacha";}
+  else{emoji='💪';title="Harakat qiling!";}
+  document.getElementById('resEmoji').textContent=emoji;
+  document.getElementById('resTitle').textContent=title;
+  document.getElementById('resBig').textContent=pct+'%';
+  document.getElementById('resDesc').textContent=`Variant ${lastV} — ${score}/${total} to'g'ri`;
+  document.getElementById('rcCorrect').textContent=score;
+  document.getElementById('rcWrong').textContent=total-score;
+  document.getElementById('rcPct').textContent=pct+'%';
+  document.getElementById('progFill').style.width='100%';
+}
+function goHome(){
+  selV=null;document.querySelectorAll('.v-card').forEach(c=>c.classList.remove('selected'));
+  const b=document.getElementById('startBtn');b.disabled=true;b.textContent='Variant tanlang';
+  showScreen('homeScreen');
+}
+function restartSame(){if(!lastV){goHome();return;}selV=lastV;startQuiz();}
+</script>
+</body>
+</html>
